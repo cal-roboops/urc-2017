@@ -12,6 +12,6 @@ To accomplish the tasks presented in the [URC 2017 Guidelines](http://urc.marsso
 
 1. 
 
-## Future competitions:
+## Future Competitions:
 
 1. 
