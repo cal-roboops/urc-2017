@@ -4,7 +4,7 @@ import numpy
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('', 3000))
-recv_len = 64000*8
+recv_len = 32768
 
 while True:
     try:
