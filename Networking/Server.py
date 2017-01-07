@@ -6,9 +6,13 @@ import sys
 # Command line arg list
 # [ip_port cam_name]
 
+if len(sys.argv) < 2:
+	print("Error not enough arguments!")
+	exit(1)
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('', int(sys.argv[1])))
-recv_len = 65536 	#32768
+recv_len = 65536 	#32768 (Large enough for some cameras)
 
 while True:
     try:
