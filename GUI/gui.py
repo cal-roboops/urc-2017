@@ -103,7 +103,7 @@ class Application(Frame):
         def show_camera1():
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.bind(('127.0.0.1', 3000))
+            sock.bind(('', 3000))
             recv_len = 32768
 
             display = Label(Frame1)
@@ -111,13 +111,16 @@ class Application(Frame):
 
             while True:
 
+                sleep(.025)
+
                 try:
                     msg = sock.recv(recv_len)
                     data = numpy.fromstring(msg, dtype='uint8')
                     decimg = cv2.imdecode(data, 1)
                     cv2image = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGBA)
                     image = Image.fromarray(cv2image)
-                    image_resized = image.resize((root.winfo_width()/3 - 30, root.winfo_height()/2 - 30), Image.ANTIALIAS)
+                    image_resized = image.resize((root.winfo_width() / 3 - 30, root.winfo_height() / 2 - 30),
+                                                 Image.ANTIALIAS)
                     img = ImageTk.PhotoImage(image=image_resized)
                     display.img = img
                     display.configure(image=img)
@@ -125,17 +128,18 @@ class Application(Frame):
                 except socket.error:
                     print("Received Too Large")
 
-
         def show_camera2():
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.bind(('127.0.0.1', 8083))
+            sock.bind(('', 3001))
             recv_len = 32768
 
             display2 = Label(Frame3)
             display2.pack(fill=None, expand=YES)
 
             while True:
+
+                sleep(.025)
 
                 try:
                     msg = sock.recv(recv_len)
@@ -152,17 +156,45 @@ class Application(Frame):
                 except socket.error:
                     print("Received Too Large")
 
+        def show_camera3():
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.bind(('', 3002))
+            recv_len = 32768
+
+            display3 = Label(Frame6)
+            display3.pack(fill=None, expand=YES)
+
+            while True:
+
+                sleep(.025)
+
+                try:
+
+                    msg = sock.recv(recv_len)
+                    data = numpy.fromstring(msg, dtype='uint8')
+                    decimg = cv2.imdecode(data, 1)
+                    cv2image = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGBA)
+                    image = Image.fromarray(cv2image)
+                    image_resized = image.resize((root.winfo_width() / 3 - 30, root.winfo_height() / 2 - 30),
+                                                 Image.ANTIALIAS)
+                    img = ImageTk.PhotoImage(image=image_resized)
+                    display3.img = img
+                    display3.configure(image=img)
+                    cv2.waitKey(1)
+                except socket.error:
+                    print("Received Too Large")
 
         def initiate_cameras():
             try:
                 Thread(target=show_camera1).start()
                 Thread(target=show_camera2).start()
+                Thread(target=show_camera3).start()
             except Exception as e:
                 print("Error: unable to start new thread.")
 
         def coordinates(event):
             Application.coord_click_in = True
-
 
         def coords_submit(event):
             print('submission')
@@ -170,38 +202,19 @@ class Application(Frame):
             lat, lon = None, None
             result = e.get()
             i = 0
-            if result == '[Lat], [Lon] (Enter: press shift-up)':
+            if result == '[Lat], [Lon] (Enter: shift-up)':
                 print("Please enter values.")
-            for char in result:
-                if i == 0:
-                    try:
-                        x = float(char)
-                    except ValueError as errorX:
-                        valid_entry = False
-                        print("Latitude and Longitude not in the right format: [Lat], [Lat]")
-                    i += 1
-                elif i == 1 and char == ",":
-                    i += 1
-                elif i == 2 and char == " ":
-                    i += 1
-                elif i == 2:
-                    try:
-                        y = float(c)
-                    except ValueError as errorY:
-                        valid_entry = False
-                        print("Latitude and Longitude not in the right format: [Lat], [Lat]")
-                elif i == 3:
-                    try:
-                        y = float(char)
-                    except ValueError as errorY:
-                        valid_entry = False
-                        print("Latitude and Longitude not in the right format: [Lat], [Lat]")
-                else:
-                    valid_entry = False
-            if Application.coord_click_in and valid_entry:
+                return
+            values = re.findall(r"[-+]?\d*\.\d+|\d+", result)
+            print(values)
+            if not values or len(values) > 2:
+                print("Latitude and Longitude not in the right format: [Lat], [Lat]")
+                return
+            lat, lon = values[0], values[1]
+            if Application.coord_click_in:
                 e.delete(0, END)
                 e.insert(0, '[Lat], [Lon] (Enter: press shift-up)')
-                print('coords_submit')
+                print('Coordinates submitted: ' + str(lat) + ", " + str(lon))
                 # draw_destination(lat, lon)
                 Application.coord_click_in = False
                 # try:
@@ -210,6 +223,8 @@ class Application(Frame):
                 #     print(eval(lat_lon))
                 # except Exception as error:
                 #     print()
+
+        # def convert_lat_lon(lat, lon):
 
         def draw_destination(lat, lon):
             x0 = lon - 5
