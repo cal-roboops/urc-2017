@@ -4,6 +4,8 @@ import socket
 import cv2
 import numpy
 from threading import Thread
+from time import sleep
+import re
 
 
 class Application(Frame):
