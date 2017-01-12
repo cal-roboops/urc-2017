@@ -1,3 +1,4 @@
+import atexit
 from Tkinter import *
 from PIL import Image, ImageTk
 import socket
@@ -30,6 +31,17 @@ class Application(Frame):
         self.master.title("Rover GUI")
         self.master.title("Rover GUI")
 
+        sock1, sock2, sock3 = None, None, None
+
+        def exit_handler():
+            cv2.destroyAllWindows()
+            if sock1:
+                sock1.close()
+            if sock2:
+                sock2.close()
+            if sock3:
+                sock3.close()
+
         for r in range(6):
             self.master.rowconfigure(r, weight=1)
         for c in range(12):
@@ -42,7 +54,7 @@ class Application(Frame):
         Frame2 = Frame(master, height=300, width=400)
         Frame2.grid_propagate(False)
         Frame2.grid(row = 3, column = 0, rowspan = 3, columnspan = 4)
-        e = Entry(Frame2)  # The entries are for representation purposes
+        e = Entry(Frame2)
         e.pack()
         e2 = Entry(Frame2)
         e2.pack()
@@ -86,7 +98,7 @@ class Application(Frame):
             Application.dots = []
             Application.lines = []
             grid_template()
-            e.delete('all')
+            e.delete(0, END)
             e.insert(END, '[Lat], [Lon] (Enter: press shift-up)')
 
         def undo():
@@ -104,8 +116,8 @@ class Application(Frame):
 
         def show_camera1():
 
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.bind(('', 3000))
+            sock1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock1.bind(('', 3000))
             recv_len = 32768
 
             display = Label(Frame1)
@@ -113,16 +125,15 @@ class Application(Frame):
 
             while True:
 
-                sleep(.025)
+                sleep(.01)
 
                 try:
-                    msg = sock.recv(recv_len)
+                    msg = sock1.recv(recv_len)
                     data = numpy.fromstring(msg, dtype='uint8')
                     decimg = cv2.imdecode(data, 1)
                     cv2image = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGBA)
                     image = Image.fromarray(cv2image)
-                    image_resized = image.resize((root.winfo_width() / 3 - 30, root.winfo_height() / 2 - 30),
-                                                 Image.ANTIALIAS)
+                    image_resized = image.resize((root.winfo_width()/3 - 30, root.winfo_height()/2 - 30), Image.ANTIALIAS)
                     img = ImageTk.PhotoImage(image=image_resized)
                     display.img = img
                     display.configure(image=img)
@@ -132,8 +143,8 @@ class Application(Frame):
 
         def show_camera2():
 
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.bind(('', 3001))
+            sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock2.bind(('', 3001))
             recv_len = 32768
 
             display2 = Label(Frame3)
@@ -141,10 +152,10 @@ class Application(Frame):
 
             while True:
 
-                sleep(.025)
+                sleep(.01)
 
                 try:
-                    msg = sock.recv(recv_len)
+                    msg = sock2.recv(recv_len)
                     data = numpy.fromstring(msg, dtype='uint8')
                     decimg = cv2.imdecode(data, 1)
                     cv2image = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGBA)
@@ -160,8 +171,8 @@ class Application(Frame):
 
         def show_camera3():
 
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.bind(('', 3002))
+            sock3 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock3.bind(('', 3002))
             recv_len = 32768
 
             display3 = Label(Frame6)
@@ -169,18 +180,17 @@ class Application(Frame):
 
             while True:
 
-                sleep(.025)
+                sleep(.01)
 
                 try:
-
-                    msg = sock.recv(recv_len)
+                    msg = sock3.recv(recv_len)
                     data = numpy.fromstring(msg, dtype='uint8')
                     decimg = cv2.imdecode(data, 1)
                     cv2image = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGBA)
                     image = Image.fromarray(cv2image)
                     image_resized = image.resize((root.winfo_width() / 3 - 30, root.winfo_height() / 2 - 30),
                                                  Image.ANTIALIAS)
-                    img = ImageTk.PhotoImage(image=image_resized)
+                    img = ImageTk.PhotoImage(image= image_resized)
                     display3.img = img
                     display3.configure(image=img)
                     cv2.waitKey(1)
@@ -193,10 +203,11 @@ class Application(Frame):
                 Thread(target=show_camera2).start()
                 Thread(target=show_camera3).start()
             except Exception as e:
-                print("Error: unable to start new thread.")
+                print("Error: unable to start camera threads.")
 
         def coordinates(event):
             Application.coord_click_in = True
+
 
         def coords_submit(event):
             print('submission')
@@ -204,7 +215,7 @@ class Application(Frame):
             lat, lon = None, None
             result = e.get()
             i = 0
-            if result == '[Lat], [Lon] (Enter: shift-up)':
+            if result == '[Lat], [Lon] (Enter: press shift-up)':
                 print("Please enter values.")
                 return
             values = re.findall(r"[-+]?\d*\.\d+|\d+", result)
@@ -212,7 +223,11 @@ class Application(Frame):
             if not values or len(values) > 2:
                 print("Latitude and Longitude not in the right format: [Lat], [Lat]")
                 return
-            lat, lon = values[0], values[1]
+            try:
+                lat, lon = float(values[0]), float(values[1])
+            except Exception as error:
+                print("Could not convert values in values array to floats. Error: " + error)
+                return
             if Application.coord_click_in:
                 e.delete(0, END)
                 e.insert(0, '[Lat], [Lon] (Enter: press shift-up)')
@@ -245,8 +260,8 @@ class Application(Frame):
         Button(master, text="Button7").grid(row=6, column=7, sticky=E + W)
         Button(master, text="Undo", command=undo).grid(row=6, column=8, sticky=E + W)
         Button(master, text="Reset Grid", command=reset).grid(row=6, column=9, sticky=E + W)
-        e = Entry(master, width=16)  # This could be how we do state variables
-        e.insert(END, '[Lat], [Lon] (Enter: shift-up)')
+        e = Entry(master, width=16)
+        e.insert(END, '[Lat], [Lon] (Enter: press shift-up)')
         e.grid(row=6, column=10, sticky=E + W)
         Button(master, text="Start").grid(row=6, column=11, sticky=E + W)
 
@@ -261,12 +276,15 @@ class Application(Frame):
             Application.prev_coord = (x, y)
             Application.dots.append(oval)
 
+
         c.bind('<Button-1>', motion)
         e.bind('<Button-1>', coordinates)
         root.bind('<Shift-Up>', coords_submit)
         root.update()
+        initiate_cameras()
         grid_template()
-        initiate_cameras() # Comment this out when using GUI w/o cameras
+        atexit.register(exit_handler)
+
 
 root = Tk()
 app = Application(master=root)
