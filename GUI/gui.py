@@ -118,7 +118,7 @@ class Application(Frame):
 
             sock1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock1.bind(('', 3000))
-            recv_len = 32768
+            recv_len = 65535
 
             display = Label(Frame1)
             display.pack(fill=None, expand=YES)
@@ -145,7 +145,7 @@ class Application(Frame):
 
             sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock2.bind(('', 3001))
-            recv_len = 32768
+            recv_len = 65535
 
             display2 = Label(Frame3)
             display2.pack(fill=None, expand=YES)
@@ -173,7 +173,7 @@ class Application(Frame):
 
             sock3 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock3.bind(('', 3002))
-            recv_len = 32768
+            recv_len = 65535
 
             display3 = Label(Frame6)
             display3.pack(fill=None, expand=YES)
